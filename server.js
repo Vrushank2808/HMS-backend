@@ -22,10 +22,11 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"]
 };
 
-// Middleware
+// ✅ Enable CORS + handle preflight
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));   // ✅ Handle preflight requests
+app.options("*", cors(corsOptions));
 
+// Middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
@@ -41,7 +42,7 @@ app.get("/", (req, res) => {
 // Routes
 app.use("/", routes);
 
-// MongoDB connection (lazy connect to avoid multiple connections in serverless)
+// MongoDB connection (lazy connect for serverless)
 let isConnected = false;
 const connectDB = async () => {
   if (isConnected) return;
@@ -54,6 +55,5 @@ const connectDB = async () => {
   }
 };
 connectDB();
-
 
 module.exports = app;
