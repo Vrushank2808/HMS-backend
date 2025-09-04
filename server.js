@@ -1,7 +1,6 @@
 // Dependencies & Declarations
 const express = require("express");
 const dotenv = require("dotenv");
-const cors = require("cors");
 const mongoose = require("mongoose");
 const routes = require("./routes/index");
 
@@ -9,22 +8,34 @@ dotenv.config();
 
 const app = express();
 
-// CORS Configuration
-const corsOptions = {
-  origin: [
+app.use((req, res, next) => {
+  const allowedOrigins = [
     "http://localhost:5173",
     "http://localhost:3000",
     process.env.FRONTEND_URL,
     /\.vercel\.app$/
-  ],
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-};
+  ];
 
-// ✅ Enable CORS + handle preflight
-app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+  const origin = req.headers.origin;
+  if (
+    origin &&
+    allowedOrigins.some(o =>
+      o instanceof RegExp ? o.test(origin) : o === origin
+    )
+  ) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+
+  next();
+});
 
 // Middleware
 app.use(express.json({ limit: "10mb" }));
@@ -42,7 +53,6 @@ app.get("/", (req, res) => {
 // Routes
 app.use("/", routes);
 
-// MongoDB connection (lazy connect for serverless)
 let isConnected = false;
 const connectDB = async () => {
   if (isConnected) return;
@@ -51,9 +61,14 @@ const connectDB = async () => {
     isConnected = true;
     console.log("✅ Connected to MongoDB");
   } catch (err) {
-    console.error("❌ MongoDB connection error:", err);
+    console.error("❌ MongoDB connection error:", err.message);
   }
 };
-connectDB();
+
+// Ensure DB connection before handling requests
+app.use(async (req, res, next) => {
+  await connectDB();
+  next();
+});
 
 module.exports = app;
