@@ -24,6 +24,8 @@ const corsOptions = {
 
 // Middleware
 app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));   // ✅ Handle preflight requests
+
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
@@ -53,6 +55,5 @@ const connectDB = async () => {
 };
 connectDB();
 
-// ❌ REMOVE app.listen()
-// ✅ Export the app for Vercel
+
 module.exports = app;
