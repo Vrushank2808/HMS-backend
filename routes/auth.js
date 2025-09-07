@@ -28,6 +28,15 @@ const findUserByEmailAndRole = async (email, role) => {
     return await Model.findOne({ email: email.toLowerCase() });
 };
 
+// Test endpoint for auth routes
+router.get('/test', (req, res) => {
+    res.status(200).json({
+        message: "Auth routes are working!",
+        timestamp: new Date().toISOString(),
+        availableModels: Object.keys(roleModels)
+    });
+});
+
 // ✅ Check if user exists
 
 router.post('/check-user', async (req, res) => {

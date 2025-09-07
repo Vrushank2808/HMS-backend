@@ -67,9 +67,32 @@ app.get("/test-cors", (req, res) => {
   });
 });
 
-// Routes
-app.use("/", routes);
+// Database test endpoint
+app.get("/test-db", async (req, res) => {
+  try {
+    const dbState = mongoose.connection.readyState;
+    const states = {
+      0: 'disconnected',
+      1: 'connected',
+      2: 'connecting',
+      3: 'disconnecting'
+    };
 
+    res.status(200).json({
+      message: "Database test endpoint",
+      mongoState: states[dbState],
+      isConnected: isConnected,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Database test failed",
+      error: error.message
+    });
+  }
+});
+
+// Database connection
 let isConnected = false;
 const connectDB = async () => {
   if (isConnected) return;
@@ -79,13 +102,25 @@ const connectDB = async () => {
     console.log("✅ Connected to MongoDB");
   } catch (err) {
     console.error("❌ MongoDB connection error:", err.message);
+    throw err;
   }
 };
 
 // Ensure DB connection before handling requests
 app.use(async (req, res, next) => {
-  await connectDB();
-  next();
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("Database connection failed:", error);
+    res.status(500).json({
+      message: "Database connection failed",
+      error: error.message
+    });
+  }
 });
+
+// Routes - Must be after database middleware
+app.use("/", routes);
 
 module.exports = app;
