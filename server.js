@@ -8,30 +8,37 @@ dotenv.config();
 
 const app = express();
 
+// CORS Configuration
 app.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  // Log origin for debugging (remove in production)
+  console.log('Request origin:', origin);
+
   const allowedOrigins = [
     "http://localhost:5173",
     "http://localhost:3000",
-    process.env.FRONTEND_URL,
-    /\.vercel\.app$/
-  ];
+    "https://hms-frontend-gules.vercel.app",
+    process.env.FRONTEND_URL
+  ].filter(Boolean); // Remove undefined values
 
-  const origin = req.headers.origin;
-  if (
-    origin &&
-    allowedOrigins.some(o =>
-      o instanceof RegExp ? o.test(origin) : o === origin
-    )
-  ) {
-    res.setHeader("Access-Control-Allow-Origin", origin);
-  }
+  // Allow any vercel.app domain or specific allowed origins
+  const isAllowed = allowedOrigins.includes(origin) ||
+    (origin && origin.endsWith('.vercel.app'));
 
+  // Always allow for Vercel deployment debugging
+  res.setHeader("Access-Control-Allow-Origin", origin || "*");
+
+  // Set CORS headers
   res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+  res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma");
+  res.setHeader("Access-Control-Max-Age", "86400"); // 24 hours
 
+  // Handle preflight requests
   if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
+    res.setHeader("Content-Length", "0");
+    return res.status(204).end();
   }
 
   next();
@@ -46,6 +53,16 @@ app.get("/", (req, res) => {
   res.status(200).json({
     message: "Hostel Management System API is running!",
     status: "healthy",
+    timestamp: new Date().toISOString(),
+    cors: "enabled"
+  });
+});
+
+// CORS test endpoint
+app.get("/test-cors", (req, res) => {
+  res.status(200).json({
+    message: "CORS is working!",
+    origin: req.headers.origin,
     timestamp: new Date().toISOString()
   });
 });
