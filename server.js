@@ -12,24 +12,20 @@ const app = express();
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
-  // Log origin for debugging (remove in production)
-  console.log('Request origin:', origin);
-
+  // Allow localhost for local dev, and any vercel.app domain, and the specific frontend URL
   const allowedOrigins = [
     "http://localhost:5173",
     "http://localhost:3000",
-    "https://hms-frontend-gules.vercel.app",
     process.env.FRONTEND_URL
-  ].filter(Boolean); // Remove undefined values
+  ].filter(Boolean);
 
-  // Allow any vercel.app domain or specific allowed origins
-  const isAllowed = allowedOrigins.includes(origin) ||
+  // Allow any *.vercel.app domain or specific allowed origins
+  const isAllowed =
+    (origin && allowedOrigins.includes(origin)) ||
     (origin && origin.endsWith('.vercel.app'));
 
-  // Always allow for Vercel deployment debugging
-  res.setHeader("Access-Control-Allow-Origin", origin || "*");
-
   // Set CORS headers
+  res.setHeader("Access-Control-Allow-Origin", isAllowed ? origin : allowedOrigins[0] || "*");
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
   res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma");
