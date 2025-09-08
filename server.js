@@ -12,28 +12,27 @@ const app = express();
 app.use((req, res, next) => {
   const origin = req.headers.origin;
 
-  // Allow localhost for local dev, and any vercel.app domain, and the specific frontend URL
   const allowedOrigins = [
     "http://localhost:5173",
     "http://localhost:3000",
     process.env.FRONTEND_URL
   ].filter(Boolean);
 
-  // Allow any *.vercel.app domain or specific allowed origins
-  const isAllowed =
-    (origin && allowedOrigins.includes(origin)) ||
-    (origin && origin.endsWith('.vercel.app'));
+  const isVercel = origin && /\.vercel\.app$/i.test(origin);
+  const isExplicitAllowed = origin && allowedOrigins.includes(origin);
+  const isAllowed = isExplicitAllowed || isVercel;
 
-  // Set CORS headers
-  res.setHeader("Access-Control-Allow-Origin", isAllowed ? origin : allowedOrigins[0] || "*");
+  const allowOriginHeader = isAllowed ? origin : (process.env.NODE_ENV === 'production' ? "*" : (allowedOrigins[0] || "*"));
+
+  res.setHeader("Access-Control-Allow-Origin", allowOriginHeader);
+  res.setHeader("Vary", "Origin");
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
   res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control, Pragma");
-  res.setHeader("Access-Control-Max-Age", "86400"); // 24 hours
+  res.setHeader("Access-Control-Max-Age", "86400");
 
-  // Handle preflight requests
   if (req.method === "OPTIONS") {
-    res.setHeader("Content-Length", "0");
+    // Explicitly end preflight without touching other middleware (no redirects)
     return res.status(204).end();
   }
 
