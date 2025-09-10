@@ -7,7 +7,6 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@vendia/serverless-express": "^4.12.6",
     "axios": "^1.11.0",
     "bcryptjs": "^3.0.2",
     "dotenv": "^17.2.1",
